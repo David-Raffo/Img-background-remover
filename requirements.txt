@@ -3,3 +3,5 @@ rembg
 Pillow
 gunicorn
 onnxruntime
+numpy
+pooch
