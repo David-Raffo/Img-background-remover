@@ -2,3 +2,4 @@ Flask
 rembg
 Pillow
 gunicorn
+onnxruntime
