@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eliminador de fondos</title>
+  <style>
+    :root {
+      --primary: #4CAF50;
+      --primary-hover: #45a049;
+      --accent: #FF6B6B;
+      --text: #2d3436;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+      padding: 2.5rem;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      transform: translateY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-2px);
+    }
+
+    h1 {
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      text-align: center;
+      position: relative;
+      padding-bottom: 1rem;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .upload-section {
+      border: 2px dashed #ced4da;
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-section:hover {
+      border-color: var(--primary);
+      background: rgba(76, 175, 80, 0.03);
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      text-align: center;
+    }
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      left: 0;
+      top: 0;
+    }
+
+    .upload-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .upload-label svg {
+      width: 48px;
+      height: 48px;
+      fill: var(--primary);
+      transition: transform 0.2s ease;
+    }
+
+    .upload-label:hover svg {
+      transform: scale(1.05);
+    }
+
+    #file-list {
+      margin-top: 1rem;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      animation: slideIn 0.3s ease;
+      position: relative;
+      padding-right: 40px;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .btn-submit {
+      background: var(--primary);
+      color: white;
+      padding: 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-submit:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s ease-in-out infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Checkmark */
+    .checkmark {
+      width: 20px;
+      height: 20px;
+      fill: #4CAF50;
+      margin-left: 8px;
+      display: none;
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .show {
+      display: inline-block !important;
+    }
+
+    .btn-submit.processing {
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Eliminador de fondos de imágenes</h1>
+    <form method="post" enctype="multipart/form-data">
+      <div class="upload-section">
+        <div class="file-input-wrapper">
+          <input type="file" id="images" name="images" accept="image/*" multiple required onchange="updateFileList(this)">
+          <label class="upload-label" for="images">
+            <svg viewBox="0 0 24 24">
+              <path d="M14,13V17H10V13H7L12,8L17,13H14M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"/>
+            </svg>
+            <span>Arrastra imágenes o haz clic aquí</span>
+            <small>Formatos soportados: JPG, PNG, JPEG Y WEBP </small>
+          </label>
+        </div>
+      </div>
+      
+      <div id="file-list"></div>
+      
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span>Eliminar Fondos</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    function updateFileList(input) {
+      const output = document.getElementById('file-list');
+      const files = input.files;
+      let list = '';
+      
+      Array.from(files).forEach((file, index) => {
+        list += `
+          <div class="file-item">
+            <span>${file.name}</span>
+            <span>${(file.size/1024/1024).toFixed(2)} MB</span>
+            <svg class="checkmark" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+          </div>
+        `;
+      });
+      
+      output.innerHTML = list;
+    }
+
+    document.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      const checkmarks = document.querySelectorAll('.checkmark');
+      
+      submitBtn.classList.add('processing');
+      submitBtn.querySelector('.spinner').style.display = 'block';
+
+      const formData = new FormData(e.target);
+      
+      try {
+        const response = await fetch('/', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Error en el procesamiento');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'descarga.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        checkmarks.forEach(check => check.classList.add('show'));
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        submitBtn.classList.remove('processing');
+        submitBtn.querySelector('.spinner').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
