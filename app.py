@@ -1,57 +1,94 @@
 import io
+import logging
 import os
 import zipfile
+
 from flask import Flask, render_template, request, send_file
-from rembg import remove
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
+from processing import InvalidImageError, allowed_file, process_image
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        # Verifica que se haya subido al menos un archivo con la clave "images"
-        if 'images' not in request.files:
-            return "No se encontró el archivo.", 400
-        files = request.files.getlist('images')
-        if not files or files[0].filename == '':
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger("bgremover")
+
+
+def output_name(filename, extension, used=None):
+    stem = os.path.splitext(secure_filename(filename) or "imagen")[0] or "imagen"
+    name = f"{stem}.{extension}"
+    if used is not None:
+        counter = 1
+        while name in used:
+            name = f"{stem}_{counter}.{extension}"
+            counter += 1
+        used.add(name)
+    return name
+
+
+def create_app(config=None):
+    app = Flask(__name__)
+    app.config.update(
+        MAX_CONTENT_LENGTH=int(os.getenv("MAX_UPLOAD_MB", "200")) * 1024 * 1024,
+        MAX_FILES=int(os.getenv("MAX_FILES", "50")),
+        DEFAULT_MODEL=os.getenv("REMBG_MODEL", "u2net"),
+    )
+    if config:
+        app.config.update(config)
+
+    @app.errorhandler(413)
+    def too_large(_):
+        return f"Los archivos superan el límite de {app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)} MB.", 413
+
+    @app.route("/", methods=["GET", "POST"])
+    def index():
+        if request.method == "GET":
+            return render_template("index.html")
+
+        files = [f for f in request.files.getlist("images") if f and f.filename]
+        if not files:
             return "No se seleccionó ningún archivo.", 400
+        if len(files) > app.config["MAX_FILES"]:
+            return f"Máximo {app.config['MAX_FILES']} imágenes por lote.", 400
 
-        # Si se sube un solo archivo, se procesa y se envía individualmente
+        model = app.config["DEFAULT_MODEL"]
+
         if len(files) == 1:
             file = files[0]
-            original_filename = file.filename
+            if not allowed_file(file.filename):
+                return f"Formato no soportado: {file.filename}", 415
             try:
-                input_data = file.read()
-                output_data = remove(input_data)
-                # Se mantiene el nombre original, cambiando la extensión a .png
-                processed_filename = os.path.splitext(original_filename)[0] + ".png"
-                return send_file(io.BytesIO(output_data),
-                                 mimetype='image/png',
-                                 as_attachment=True,
-                                 download_name=processed_filename)
-            except Exception as e:
-                return f"Error procesando la imagen {original_filename}: {str(e)}", 500
-        else:
-            # Para múltiples archivos, se procesan y se agregan a un ZIP para facilitar la descarga
-            memory_file = io.BytesIO()
-            with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-                for file in files:
-                    original_filename = file.filename
-                    try:
-                        input_data = file.read()
-                        output_data = remove(input_data)
-                        processed_filename = os.path.splitext(original_filename)[0] + ".png"
-                        zf.writestr(processed_filename, output_data)
-                    except Exception as e:
-                        # Si se produce algún error con un archivo, se puede omitir o registrar el error.
-                        print(f"Error procesando {original_filename}: {str(e)}")
-            memory_file.seek(0)
-            return send_file(memory_file,
-                             mimetype='application/zip',
-                             as_attachment=True,
-                             download_name='imagenes_procesadas.zip')
-    return render_template('index.html')
+                output = process_image(file.read(), model)
+            except InvalidImageError as exc:
+                return f"{file.filename}: {exc}", 422
+            except Exception:
+                logger.exception("Error procesando %s", file.filename)
+                return f"Error procesando la imagen {file.filename}.", 500
+            return send_file(io.BytesIO(output), mimetype="image/png", as_attachment=True,
+                             download_name=output_name(file.filename, "png"))
 
-if __name__ == '__main__':
-    app.run(debug=False, host="0.0.0.0", port=os.getenv("PORT", default=5000))
+        memory_file = io.BytesIO()
+        used, errors = set(), []
+        with zipfile.ZipFile(memory_file, "w", zipfile.ZIP_DEFLATED) as zf:
+            for file in files:
+                if not allowed_file(file.filename):
+                    errors.append(f"{file.filename}: formato no soportado")
+                    continue
+                try:
+                    zf.writestr(output_name(file.filename, "png", used), process_image(file.read(), model))
+                except InvalidImageError as exc:
+                    errors.append(f"{file.filename}: {exc}")
+                except Exception:
+                    logger.exception("Error procesando %s", file.filename)
+                    errors.append(f"{file.filename}: error interno")
+            if errors:
+                zf.writestr("errores.txt", "\n".join(errors))
+        memory_file.seek(0)
+        return send_file(memory_file, mimetype="application/zip", as_attachment=True,
+                         download_name="imagenes_procesadas.zip")
 
+    return app
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
