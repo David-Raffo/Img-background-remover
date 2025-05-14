@@ -3,7 +3,7 @@ import logging
 import os
 import zipfile
 
-from flask import Flask, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 from processing import InvalidImageError, allowed_file, process_image
@@ -34,9 +34,35 @@ def create_app(config=None):
     if config:
         app.config.update(config)
 
+    def api_error(message, status):
+        return jsonify(error=message), status
+
     @app.errorhandler(413)
     def too_large(_):
-        return f"Los archivos superan el límite de {app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)} MB.", 413
+        message = f"Los archivos superan el límite de {app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)} MB."
+        if request.path.startswith("/api/"):
+            return api_error(message, 413)
+        return message, 413
+
+    @app.get("/health")
+    def health():
+        return jsonify(status="ok")
+
+    @app.post("/api/remove")
+    def api_remove():
+        file = request.files.get("image")
+        if not file or not file.filename:
+            return api_error("No se recibió ninguna imagen.", 400)
+        if not allowed_file(file.filename):
+            return api_error(f"Formato no soportado: {file.filename}", 415)
+        try:
+            output = process_image(file.read(), app.config["DEFAULT_MODEL"])
+        except InvalidImageError as exc:
+            return api_error(str(exc), 422)
+        except Exception:
+            logger.exception("Error procesando %s", file.filename)
+            return api_error("Error interno al procesar la imagen.", 500)
+        return send_file(io.BytesIO(output), mimetype="image/png", download_name=output_name(file.filename, "png"))
 
     @app.route("/", methods=["GET", "POST"])
     def index():
