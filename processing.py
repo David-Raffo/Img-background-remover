@@ -1,9 +1,26 @@
 import io
 import threading
+from dataclasses import dataclass
 
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageColor, ImageOps, UnidentifiedImageError
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"}
+
+MODELS = {
+    "u2net": "General (U²-Net)",
+    "isnet-general-use": "Alta precisión (ISNet)",
+    "u2net_human_seg": "Personas",
+    "isnet-anime": "Anime e ilustraciones",
+    "silueta": "Rápido (Silueta)",
+}
+
+OUTPUT_FORMATS = {
+    "png": ("PNG", "image/png"),
+    "webp": ("WEBP", "image/webp"),
+    "jpg": ("JPEG", "image/jpeg"),
+}
+
+TRUE_VALUES = {"1", "true", "on", "yes"}
 
 _sessions = {}
 _sessions_lock = threading.Lock()
@@ -11,6 +28,56 @@ _sessions_lock = threading.Lock()
 
 class InvalidImageError(ValueError):
     pass
+
+
+class InvalidOptionsError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class Options:
+    model: str = "u2net"
+    output_format: str = "png"
+    background: str | None = None
+    crop: bool = False
+
+    @classmethod
+    def from_form(cls, form, default_model="u2net"):
+        model = form.get("model") or default_model
+        if model not in MODELS:
+            raise InvalidOptionsError(f"Modelo desconocido: {model}")
+
+        output_format = (form.get("format") or "png").lower()
+        if output_format == "jpeg":
+            output_format = "jpg"
+        if output_format not in OUTPUT_FORMATS:
+            raise InvalidOptionsError(f"Formato de salida no soportado: {output_format}")
+
+        background = (form.get("background") or "").strip() or None
+        if background in {"transparent", "none"}:
+            background = None
+        if background:
+            try:
+                ImageColor.getcolor(background, "RGBA")
+            except ValueError as exc:
+                raise InvalidOptionsError(f"Color de fondo no válido: {background}") from exc
+        if output_format == "jpg" and background is None:
+            background = "#ffffff"
+
+        return cls(
+            model=model,
+            output_format=output_format,
+            background=background,
+            crop=str(form.get("crop", "")).lower() in TRUE_VALUES,
+        )
+
+    @property
+    def extension(self):
+        return self.output_format
+
+    @property
+    def mimetype(self):
+        return OUTPUT_FORMATS[self.output_format][1]
 
 
 def allowed_file(filename):
@@ -41,9 +108,33 @@ def load_image(data):
         raise InvalidImageError("El archivo no es una imagen válida.") from exc
 
 
-def process_image(data, model="u2net"):
-    image = load_image(data)
-    result = _rembg_remove(image, get_session(model))
+def apply_options(result, options):
+    result = result.convert("RGBA")
+    if options.crop:
+        bbox = result.getchannel("A").getbbox()
+        if bbox:
+            result = result.crop(bbox)
+    if options.background:
+        canvas = Image.new("RGBA", result.size, ImageColor.getcolor(options.background, "RGBA"))
+        canvas.alpha_composite(result)
+        result = canvas
+    return result
+
+
+def encode(image, output_format):
+    pil_format = OUTPUT_FORMATS[output_format][0]
     buffer = io.BytesIO()
-    result.save(buffer, "PNG", optimize=True)
+    if pil_format == "JPEG":
+        image.convert("RGB").save(buffer, pil_format, quality=95, optimize=True)
+    elif pil_format == "WEBP":
+        image.save(buffer, pil_format, quality=95, method=6)
+    else:
+        image.save(buffer, pil_format, optimize=True)
     return buffer.getvalue()
+
+
+def process_image(data, options=None):
+    options = options or Options()
+    image = load_image(data)
+    result = _rembg_remove(image, get_session(options.model))
+    return encode(apply_options(result, options), options.output_format)

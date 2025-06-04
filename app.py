@@ -6,7 +6,7 @@ import zipfile
 from flask import Flask, jsonify, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
-from processing import InvalidImageError, allowed_file, process_image
+from processing import MODELS, InvalidImageError, InvalidOptionsError, Options, allowed_file, process_image
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("bgremover")
@@ -56,13 +56,22 @@ def create_app(config=None):
         if not allowed_file(file.filename):
             return api_error(f"Formato no soportado: {file.filename}", 415)
         try:
-            output = process_image(file.read(), app.config["DEFAULT_MODEL"])
+            options = Options.from_form(request.form, app.config["DEFAULT_MODEL"])
+        except InvalidOptionsError as exc:
+            return api_error(str(exc), 400)
+        try:
+            output = process_image(file.read(), options)
         except InvalidImageError as exc:
             return api_error(str(exc), 422)
         except Exception:
             logger.exception("Error procesando %s", file.filename)
             return api_error("Error interno al procesar la imagen.", 500)
-        return send_file(io.BytesIO(output), mimetype="image/png", download_name=output_name(file.filename, "png"))
+        return send_file(io.BytesIO(output), mimetype=options.mimetype,
+                         download_name=output_name(file.filename, options.extension))
+
+    @app.get("/api/models")
+    def api_models():
+        return jsonify(default=app.config["DEFAULT_MODEL"], models=MODELS)
 
     @app.route("/", methods=["GET", "POST"])
     def index():
@@ -75,21 +84,24 @@ def create_app(config=None):
         if len(files) > app.config["MAX_FILES"]:
             return f"Máximo {app.config['MAX_FILES']} imágenes por lote.", 400
 
-        model = app.config["DEFAULT_MODEL"]
+        try:
+            options = Options.from_form(request.form, app.config["DEFAULT_MODEL"])
+        except InvalidOptionsError as exc:
+            return str(exc), 400
 
         if len(files) == 1:
             file = files[0]
             if not allowed_file(file.filename):
                 return f"Formato no soportado: {file.filename}", 415
             try:
-                output = process_image(file.read(), model)
+                output = process_image(file.read(), options)
             except InvalidImageError as exc:
                 return f"{file.filename}: {exc}", 422
             except Exception:
                 logger.exception("Error procesando %s", file.filename)
                 return f"Error procesando la imagen {file.filename}.", 500
-            return send_file(io.BytesIO(output), mimetype="image/png", as_attachment=True,
-                             download_name=output_name(file.filename, "png"))
+            return send_file(io.BytesIO(output), mimetype=options.mimetype, as_attachment=True,
+                             download_name=output_name(file.filename, options.extension))
 
         memory_file = io.BytesIO()
         used, errors = set(), []
@@ -99,7 +111,8 @@ def create_app(config=None):
                     errors.append(f"{file.filename}: formato no soportado")
                     continue
                 try:
-                    zf.writestr(output_name(file.filename, "png", used), process_image(file.read(), model))
+                    output = process_image(file.read(), options)
+                    zf.writestr(output_name(file.filename, options.extension, used), output)
                 except InvalidImageError as exc:
                     errors.append(f"{file.filename}: {exc}")
                 except Exception:
