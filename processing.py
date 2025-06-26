@@ -40,6 +40,8 @@ class Options:
     output_format: str = "png"
     background: str | None = None
     crop: bool = False
+    alpha_matting: bool = False
+    max_size: int | None = None
 
     @classmethod
     def from_form(cls, form, default_model="u2net"):
@@ -64,11 +66,22 @@ class Options:
         if output_format == "jpg" and background is None:
             background = "#ffffff"
 
+        max_size = form.get("max_size") or None
+        if max_size is not None:
+            try:
+                max_size = int(max_size)
+            except ValueError as exc:
+                raise InvalidOptionsError("El tamaño máximo debe ser un número entero.") from exc
+            if not 64 <= max_size <= 10000:
+                raise InvalidOptionsError("El tamaño máximo debe estar entre 64 y 10000 px.")
+
         return cls(
             model=model,
             output_format=output_format,
             background=background,
             crop=str(form.get("crop", "")).lower() in TRUE_VALUES,
+            alpha_matting=str(form.get("alpha_matting", "")).lower() in TRUE_VALUES,
+            max_size=max_size,
         )
 
     @property
@@ -93,9 +106,18 @@ def get_session(model):
         return _sessions[model]
 
 
-def _rembg_remove(image, session):
+def _rembg_remove(image, session, alpha_matting=False):
     from rembg import remove
 
+    if alpha_matting:
+        return remove(
+            image,
+            session=session,
+            alpha_matting=True,
+            alpha_matting_foreground_threshold=240,
+            alpha_matting_background_threshold=10,
+            alpha_matting_erode_size=10,
+        )
     return remove(image, session=session)
 
 
@@ -136,5 +158,7 @@ def encode(image, output_format):
 def process_image(data, options=None):
     options = options or Options()
     image = load_image(data)
-    result = _rembg_remove(image, get_session(options.model))
+    if options.max_size and max(image.size) > options.max_size:
+        image.thumbnail((options.max_size, options.max_size), Image.Resampling.LANCZOS)
+    result = _rembg_remove(image, get_session(options.model), options.alpha_matting)
     return encode(apply_options(result, options), options.output_format)
