@@ -3,323 +3,163 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eliminador de fondos</title>
-  <style>
-    :root {
-      --primary: #4CAF50;
-      --primary-hover: #45a049;
-      --accent: #FF6B6B;
-      --text: #2d3436;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .container {
-      background: white;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
-      padding: 2.5rem;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 720px;
-      transform: translateY(0);
-      transition: transform 0.3s ease;
-    }
-
-    .container:hover {
-      transform: translateY(-2px);
-    }
-
-    h1 {
-      color: var(--text);
-      margin-bottom: 1.5rem;
-      font-size: 1.8rem;
-      text-align: center;
-      position: relative;
-      padding-bottom: 1rem;
-    }
-
-    h1::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 3px;
-      background: var(--primary);
-      border-radius: 2px;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .upload-section {
-      border: 2px dashed #ced4da;
-      border-radius: 12px;
-      padding: 2rem 1rem;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .upload-section:hover {
-      border-color: var(--primary);
-      background: rgba(76, 175, 80, 0.03);
-    }
-
-    .file-input-wrapper {
-      position: relative;
-      text-align: center;
-    }
-
-    .file-input-wrapper input[type="file"] {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-      left: 0;
-      top: 0;
-    }
-
-    .upload-label {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      color: var(--text);
-      cursor: pointer;
-    }
-
-    .upload-label svg {
-      width: 48px;
-      height: 48px;
-      fill: var(--primary);
-      transition: transform 0.2s ease;
-    }
-
-    .upload-label:hover svg {
-      transform: scale(1.05);
-    }
-
-    #file-list {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-
-    .file-item {
-      display: flex;
-      flex-direction: column;
-      align-items: start;
-      background: #f8f9fa;
-      padding: 0.75rem;
-      border-radius: 8px;
-      animation: slideIn 0.3s ease;
-      position: relative;
-      min-height: 60px;
-      break-inside: avoid;
-      padding-right: 40px;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .btn-submit {
-      background: var(--primary);
-      color: white;
-      padding: 1rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-submit:hover {
-      background: var(--primary-hover);
-      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-    }
-
-    .btn-submit:disabled {
-      background: #cccccc;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .spinner {
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: #ffffff;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s ease-in-out infinite;
-      display: none;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .checkmark {
-      width: 20px;
-      height: 20px;
-      fill: #4CAF50;
-      display: none;
-      position: absolute;
-      right: 10px;
-      top: 10px;
-    }
-
-    .show {
-      display: inline-block !important;
-    }
-
-    .btn-submit.processing {
-      pointer-events: none;
-      opacity: 0.8;
-    }
-
-    @media (max-width: 768px) {
-      #file-list {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .container {
-        max-width: 480px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      #file-list {
-        grid-template-columns: 1fr;
-      }
-      
-      .container {
-        padding: 1.5rem;
-      }
-      
-      h1 {
-        font-size: 1.5rem;
-      }
-    }
-  </style>
+  <meta name="description" content="Elimina el fondo de muchas imágenes a la vez con IA, directamente en tu servidor.">
+  <title>Quitafondos · Eliminador de fondos en lote</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
-  <div class="container">
-    <h1>Eliminador de fondos de imágenes</h1>
-    <form method="post" enctype="multipart/form-data">
-      <div class="upload-section">
-        <div class="file-input-wrapper">
-          <input type="file" id="images" name="images" accept="image/*" multiple required onchange="updateFileList(this)">
-          <label class="upload-label" for="images">
-            <svg viewBox="0 0 24 24">
-              <path d="M14,13V17H10V13H7L12,8L17,13H14M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"/>
-            </svg>
-            <span>Arrastra imágenes o haz clic aquí</span>
-            <small>Formatos soportados: JPG, PNG, JPEG Y WEBP </small>
+<body data-max-files="{{ max_files }}" data-max-mb="{{ max_mb }}">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="32" height="32">
+        <span>Quitafondos</span>
+      </a>
+      <div class="topbar-actions">
+        <span class="chip"><span class="dot"></span>Procesamiento local</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="hero">
+      <h1>Elimina el fondo de tus imágenes <span class="accent">en lote</span></h1>
+      <p>Sube decenas de fotos a la vez, ajusta el resultado y descárgalas todas en un ZIP. Todo se procesa en tu propio servidor.</p>
+    </section>
+
+    <aside class="panel settings-panel">
+      <form id="settings" autocomplete="off">
+        <h2 class="panel-title">
+          <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+          Ajustes
+        </h2>
+
+        <label class="field">
+          <span class="field-label">Modelo de IA</span>
+          <select name="model">
+            {% for key, label in models.items() %}
+            <option value="{{ key }}" {% if key == default_model %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <fieldset class="field">
+          <legend class="field-label">Formato de salida</legend>
+          <div class="segmented">
+            <label><input type="radio" name="format" value="png" checked><span>PNG</span></label>
+            <label><input type="radio" name="format" value="webp"><span>WebP</span></label>
+            <label><input type="radio" name="format" value="jpg"><span>JPG</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend class="field-label">Fondo</legend>
+          <div class="segmented">
+            <label><input type="radio" name="bg_mode" value="transparent" checked><span>Transparente</span></label>
+            <label><input type="radio" name="bg_mode" value="white"><span>Blanco</span></label>
+            <label><input type="radio" name="bg_mode" value="color"><span>Color</span></label>
+          </div>
+          <div class="color-row" id="color-row">
+            <input type="color" name="bg_color" id="bg-color" value="#4f46e5" aria-label="Color de fondo">
+            <span id="bg-color-value">#4f46e5</span>
+          </div>
+          <p class="hint" id="jpg-hint" hidden>JPG no admite transparencia: se usará fondo blanco.</p>
+        </fieldset>
+
+        <label class="field">
+          <span class="field-label">Tamaño máximo</span>
+          <select name="max_size">
+            <option value="">Original</option>
+            <option value="4096">4096 px</option>
+            <option value="2048">2048 px</option>
+            <option value="1024">1024 px</option>
+          </select>
+        </label>
+
+        <div class="field toggles">
+          <label class="switch">
+            <input type="checkbox" name="crop">
+            <span class="switch-track"></span>
+            <span><strong>Recortar al contenido</strong><small>Elimina el espacio vacío alrededor</small></span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" name="alpha_matting">
+            <span class="switch-track"></span>
+            <span><strong>Bordes finos</strong><small>Mejor en pelo y bordes difusos (más lento)</small></span>
           </label>
         </div>
+      </form>
+    </aside>
+
+    <section class="workspace">
+      <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff" multiple hidden>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Seleccionar imágenes">
+        <div class="dropzone-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        </div>
+        <p class="dropzone-title">Arrastra tus imágenes aquí o <span class="link">selecciónalas</span></p>
+        <p class="dropzone-sub">JPG, PNG, WebP, BMP o TIFF · hasta {{ max_files }} imágenes</p>
       </div>
-      
-      <div id="file-list"></div>
-      
-      <button type="submit" class="btn-submit" id="submitBtn">
-        <span>Eliminar Fondos</span>
-        <div class="spinner"></div>
-      </button>
-    </form>
-  </div>
 
-  <script>
-    function updateFileList(input) {
-      const output = document.getElementById('file-list');
-      const files = input.files;
-      let list = '';
-      
-      Array.from(files).forEach((file, index) => {
-        list += `
-          <div class="file-item">
-            <span style="font-weight: 500; margin-bottom: 4px;">${file.name}</span>
-            <span style="font-size: 0.8em; color: #666;">${(file.size/1024/1024).toFixed(2)} MB</span>
-            <svg class="checkmark" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
+      <div class="toolbar panel" id="toolbar" hidden>
+        <div class="toolbar-info">
+          <strong id="counter"></strong>
+          <div class="progress" id="progress" hidden>
+            <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+            <span id="progress-text"></span>
           </div>
-        `;
-      });
-      
-      output.innerHTML = list;
-    }
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost" id="btn-clear" type="button">Vaciar</button>
+          <button class="btn btn-secondary" id="btn-reprocess" type="button" hidden>Reprocesar todas</button>
+          <button class="btn btn-primary" id="btn-process" type="button" disabled>
+            <svg viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            <span id="btn-process-label">Eliminar fondos</span>
+          </button>
+        </div>
+      </div>
 
-    document.querySelector('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submitBtn = document.getElementById('submitBtn');
-      const checkmarks = document.querySelectorAll('.checkmark');
-      
-      submitBtn.classList.add('processing');
-      submitBtn.querySelector('.spinner').style.display = 'block';
+      <div class="empty-state" id="empty-state">
+        <p>Aún no hay imágenes. Los resultados aparecerán aquí.</p>
+      </div>
 
-      const formData = new FormData(e.target);
-      
-      try {
-        const response = await fetch('/', {
-          method: 'POST',
-          body: formData
-        });
+      <div class="gallery" id="gallery"></div>
+    </section>
+  </main>
 
-        if (!response.ok) throw new Error('Error en el procesamiento');
-        
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'descarga.png';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+  <footer class="footer">
+    <p>Quitafondos · Flask + rembg · Las imágenes no se almacenan en el servidor</p>
+  </footer>
 
-        checkmarks.forEach(check => check.classList.add('show'));
-      } catch (error) {
-        alert(error.message);
-      } finally {
-        submitBtn.classList.remove('processing');
-        submitBtn.querySelector('.spinner').style.display = 'none';
-      }
-    });
-  </script>
+  <template id="card-template">
+    <article class="card" data-status="pending">
+      <div class="card-media checker">
+        <img class="img-original" alt="">
+        <img class="img-result" alt="">
+        <div class="card-loading"><span class="spinner"></span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-info">
+          <p class="card-name"></p>
+          <p class="card-meta"><span class="badge"></span><span class="card-size"></span></p>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn btn-download" type="button" title="Descargar" aria-label="Descargar" hidden>
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+          <button class="icon-btn btn-retry" type="button" title="Reintentar" aria-label="Reintentar" hidden>
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></svg>
+          </button>
+          <button class="icon-btn btn-remove" type="button" title="Quitar" aria-label="Quitar">
+            <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

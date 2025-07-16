@@ -76,7 +76,13 @@ def create_app(config=None):
     @app.route("/", methods=["GET", "POST"])
     def index():
         if request.method == "GET":
-            return render_template("index.html")
+            return render_template(
+                "index.html",
+                models=MODELS,
+                default_model=app.config["DEFAULT_MODEL"],
+                max_files=app.config["MAX_FILES"],
+                max_mb=app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024),
+            )
 
         files = [f for f in request.files.getlist("images") if f and f.filename]
         if not files:
