@@ -112,6 +112,10 @@
         <div class="toolbar-actions">
           <button class="btn btn-ghost" id="btn-clear" type="button">Vaciar</button>
           <button class="btn btn-secondary" id="btn-reprocess" type="button" hidden>Reprocesar todas</button>
+          <button class="btn btn-secondary" id="btn-zip" type="button" disabled>
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Descargar ZIP
+          </button>
           <button class="btn btn-primary" id="btn-process" type="button" disabled>
             <svg viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
             <span id="btn-process-label">Eliminar fondos</span>
@@ -120,7 +124,7 @@
       </div>
 
       <div class="empty-state" id="empty-state">
-        <p>Aún no hay imágenes. Los resultados aparecerán aquí.</p>
+        <p>Aún no hay imágenes. Los resultados aparecerán aquí con una comparación antes/después.</p>
       </div>
 
       <div class="gallery" id="gallery"></div>
@@ -136,6 +140,8 @@
       <div class="card-media checker">
         <img class="img-original" alt="">
         <img class="img-result" alt="">
+        <span class="compare-handle" aria-hidden="true"></span>
+        <input class="compare" type="range" min="0" max="100" value="50" aria-label="Comparar antes y después">
         <div class="card-loading"><span class="spinner"></span></div>
       </div>
       <div class="card-body">
@@ -160,6 +166,7 @@
 
   <div class="toasts" id="toasts" aria-live="polite"></div>
 
+  <script src="{{ url_for('static', filename='js/zip.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

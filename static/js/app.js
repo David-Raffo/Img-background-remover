@@ -22,6 +22,7 @@
     process: $("#btn-process"),
     processLabel: $("#btn-process-label"),
     reprocess: $("#btn-reprocess"),
+    zip: $("#btn-zip"),
     clear: $("#btn-clear"),
     settings: $("#settings"),
     colorRow: $("#color-row"),
@@ -122,6 +123,9 @@
     $(".img-result", el).alt = `${item.file.name} sin fondo`;
     $(".card-name", el).textContent = item.file.name;
     $(".card-name", el).title = item.file.name;
+    $(".compare", el).addEventListener("input", (event) => {
+      $(".card-media", el).style.setProperty("--pos", `${event.target.value}%`);
+    });
     $(".btn-download", el).addEventListener("click", () => triggerDownload(item.resultUrl, item.outputName));
     $(".btn-retry", el).addEventListener("click", () => run([item]));
     $(".btn-remove", el).addEventListener("click", () => removeItem(item));
@@ -228,6 +232,34 @@
     else toast(`${plural(total, "imagen procesada", "imágenes procesadas")} correctamente.`, "success");
   }
 
+  const uniqueName = (name, used) => {
+    let candidate = name;
+    let counter = 1;
+    while (used.has(candidate.toLowerCase())) {
+      candidate = name.replace(/(\.[^.]+)?$/, `_${counter++}$1`);
+    }
+    used.add(candidate.toLowerCase());
+    return candidate;
+  };
+
+  async function downloadZip() {
+    const ready = items.filter((item) => item.status === "done");
+    if (!ready.length) return;
+    els.zip.disabled = true;
+    try {
+      const used = new Set();
+      const entries = ready.map((item) => ({ name: uniqueName(item.outputName, used), blob: item.resultBlob }));
+      const zip = await ZipWriter.create(entries);
+      const url = URL.createObjectURL(zip);
+      triggerDownload(url, `quitafondos_${new Date().toISOString().slice(0, 10)}.zip`);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch {
+      toast("No se pudo generar el ZIP.", "error");
+    } finally {
+      render();
+    }
+  }
+
   function render() {
     const total = items.length;
     const done = items.filter((item) => item.status === "done").length;
@@ -242,6 +274,7 @@
     els.processLabel.textContent = busy ? "Procesando…" : pending ? `Eliminar fondos (${pending})` : "Eliminar fondos";
     els.reprocess.hidden = done === 0;
     els.reprocess.disabled = busy;
+    els.zip.disabled = busy || done === 0;
     els.clear.disabled = busy;
 
     els.progress.hidden = !busy;
@@ -288,6 +321,7 @@
   els.process.addEventListener("click", () =>
     run(items.filter((item) => item.status === "pending" || item.status === "error")));
   els.reprocess.addEventListener("click", () => run([...items]));
+  els.zip.addEventListener("click", downloadZip);
   els.clear.addEventListener("click", clearAll);
 
   els.colorInput.addEventListener("input", () => {

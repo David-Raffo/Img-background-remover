@@ -615,6 +615,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .card-media {
+  --pos: 50%;
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -631,6 +632,12 @@ input[type="color"]::-webkit-color-swatch {
 
 .img-result {
   display: none;
+  clip-path: inset(0 0 0 var(--pos));
+}
+
+.compare,
+.compare-handle {
+  display: none;
 }
 
 .card[data-status="done"] .img-result {
@@ -638,7 +645,44 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .card[data-status="done"] .img-original {
-  display: none;
+  clip-path: inset(0 calc(100% - var(--pos)) 0 0);
+}
+
+.card[data-status="done"] .compare {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+
+.card[data-status="done"] .compare-handle {
+  display: block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--pos);
+  width: 2px;
+  transform: translateX(-1px);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.25);
+  pointer-events: none;
+}
+
+.compare-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E") no-repeat center / 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
 }
 
 .card-loading {
