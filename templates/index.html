@@ -6,6 +6,7 @@
   <meta name="description" content="Elimina el fondo de muchas imágenes a la vez con IA, directamente en tu servidor.">
   <title>Quitafondos · Eliminador de fondos en lote</title>
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <script>try{var t=localStorage.getItem("quitafondos:theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body data-max-files="{{ max_files }}" data-max-mb="{{ max_mb }}">
@@ -17,6 +18,10 @@
       </a>
       <div class="topbar-actions">
         <span class="chip"><span class="dot"></span>Procesamiento local</span>
+        <button class="icon-btn" id="btn-theme" type="button" title="Cambiar tema" aria-label="Cambiar tema">
+          <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
       </div>
     </div>
   </header>
@@ -98,7 +103,7 @@
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
         </div>
         <p class="dropzone-title">Arrastra tus imágenes aquí o <span class="link">selecciónalas</span></p>
-        <p class="dropzone-sub">JPG, PNG, WebP, BMP o TIFF · hasta {{ max_files }} imágenes</p>
+        <p class="dropzone-sub">JPG, PNG, WebP, BMP o TIFF · hasta {{ max_files }} imágenes · también puedes pegar con Ctrl+V</p>
       </div>
 
       <div class="toolbar panel" id="toolbar" hidden>

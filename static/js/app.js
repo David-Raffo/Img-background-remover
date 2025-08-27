@@ -5,6 +5,8 @@
   const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/bmp", "image/tiff"];
   const ACCEPTED_NAMES = /\.(png|jpe?g|webp|bmp|tiff?)$/i;
   const EXTENSIONS = { "image/png": "png", "image/webp": "webp", "image/jpeg": "jpg" };
+  const SETTINGS_KEY = "quitafondos:settings";
+  const THEME_KEY = "quitafondos:theme";
   const STATUS_LABELS = { pending: "Pendiente", processing: "Procesando…", done: "Listo", error: "Error" };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -29,6 +31,7 @@
     colorInput: $("#bg-color"),
     colorValue: $("#bg-color-value"),
     jpgHint: $("#jpg-hint"),
+    theme: $("#btn-theme"),
     toasts: $("#toasts"),
     template: $("#card-template"),
   };
@@ -82,6 +85,47 @@
     els.colorRow.classList.toggle("inactive", data.get("bg_mode") !== "color");
     els.colorValue.textContent = els.colorInput.value;
     els.jpgHint.hidden = !(data.get("format") === "jpg" && data.get("bg_mode") === "transparent");
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.fromEntries(new FormData(els.settings))));
+    } catch {}
+  }
+
+  function restoreSettings() {
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
+    } catch {}
+    if (!saved) return;
+    for (const field of els.settings.elements) {
+      if (!field.name) continue;
+      if (field.type === "checkbox") {
+        field.checked = field.name in saved;
+      } else if (!(field.name in saved)) {
+        continue;
+      } else if (field.type === "radio") {
+        field.checked = saved[field.name] === field.value;
+      } else if (field.tagName === "SELECT") {
+        if ([...field.options].some((option) => option.value === saved[field.name])) field.value = saved[field.name];
+      } else {
+        field.value = saved[field.name];
+      }
+    }
+  }
+
+  function currentTheme() {
+    return document.documentElement.dataset.theme ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  }
+
+  function toggleTheme() {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {}
   }
 
   const isAccepted = (file) => ACCEPTED_TYPES.includes(file.type) || ACCEPTED_NAMES.test(file.name);
@@ -318,17 +362,26 @@
     addFiles(event.dataTransfer.files);
   });
 
+  document.addEventListener("paste", (event) => {
+    const files = [...(event.clipboardData?.files || [])];
+    if (!files.length) return;
+    event.preventDefault();
+    addFiles(files);
+  });
+
   els.process.addEventListener("click", () =>
     run(items.filter((item) => item.status === "pending" || item.status === "error")));
   els.reprocess.addEventListener("click", () => run([...items]));
   els.zip.addEventListener("click", downloadZip);
   els.clear.addEventListener("click", clearAll);
+  els.theme.addEventListener("click", toggleTheme);
 
   els.colorInput.addEventListener("input", () => {
     els.settings.querySelector('input[name="bg_mode"][value="color"]').checked = true;
   });
   els.settings.addEventListener("input", () => {
     syncSettingsUI();
+    saveSettings();
   });
   els.settings.addEventListener("submit", (event) => event.preventDefault());
 
@@ -336,6 +389,7 @@
     if (batch) event.preventDefault();
   });
 
+  restoreSettings();
   syncSettingsUI();
   render();
 })();
