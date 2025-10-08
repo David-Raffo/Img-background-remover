@@ -66,8 +66,9 @@ def create_app(config=None):
         except Exception:
             logger.exception("Error procesando %s", file.filename)
             return api_error("Error interno al procesar la imagen.", 500)
-        return send_file(io.BytesIO(output), mimetype=options.mimetype,
-                         download_name=output_name(file.filename, options.extension))
+        return send_file(
+            io.BytesIO(output), mimetype=options.mimetype, download_name=output_name(file.filename, options.extension)
+        )
 
     @app.get("/api/models")
     def api_models():
@@ -106,8 +107,12 @@ def create_app(config=None):
             except Exception:
                 logger.exception("Error procesando %s", file.filename)
                 return f"Error procesando la imagen {file.filename}.", 500
-            return send_file(io.BytesIO(output), mimetype=options.mimetype, as_attachment=True,
-                             download_name=output_name(file.filename, options.extension))
+            return send_file(
+                io.BytesIO(output),
+                mimetype=options.mimetype,
+                as_attachment=True,
+                download_name=output_name(file.filename, options.extension),
+            )
 
         memory_file = io.BytesIO()
         used, errors = set(), []
@@ -127,8 +132,9 @@ def create_app(config=None):
             if errors:
                 zf.writestr("errores.txt", "\n".join(errors))
         memory_file.seek(0)
-        return send_file(memory_file, mimetype="application/zip", as_attachment=True,
-                         download_name="imagenes_procesadas.zip")
+        return send_file(
+            memory_file, mimetype="application/zip", as_attachment=True, download_name="imagenes_procesadas.zip"
+        )
 
     return app
 
