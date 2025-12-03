@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import time
 import zipfile
 
 from flask import Flask, jsonify, render_template, request, send_file
@@ -37,6 +38,14 @@ def create_app(config=None):
     def api_error(message, status):
         return jsonify(error=message), status
 
+    @app.after_request
+    def security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "same-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        return response
+
     @app.errorhandler(413)
     def too_large(_):
         message = f"Los archivos superan el límite de {app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)} MB."
@@ -59,6 +68,7 @@ def create_app(config=None):
             options = Options.from_form(request.form, app.config["DEFAULT_MODEL"])
         except InvalidOptionsError as exc:
             return api_error(str(exc), 400)
+        started = time.perf_counter()
         try:
             output = process_image(file.read(), options)
         except InvalidImageError as exc:
@@ -66,9 +76,14 @@ def create_app(config=None):
         except Exception:
             logger.exception("Error procesando %s", file.filename)
             return api_error("Error interno al procesar la imagen.", 500)
-        return send_file(
+        elapsed = time.perf_counter() - started
+        logger.info("%s procesada en %.2fs con %s", file.filename, elapsed, options.model)
+        response = send_file(
             io.BytesIO(output), mimetype=options.mimetype, download_name=output_name(file.filename, options.extension)
         )
+        response.headers["X-Processing-Time"] = f"{elapsed:.3f}"
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.get("/api/models")
     def api_models():

@@ -32,6 +32,18 @@ def test_api_remove_png(client, image_file):
     assert Image.open(io.BytesIO(response.data)).mode == "RGBA"
 
 
+def test_api_remove_reports_processing_time(client, image_file):
+    response = client.post("/api/remove", data={"image": (image_file(), "foto.jpg")})
+    assert float(response.headers["X-Processing-Time"]) >= 0
+    assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_security_headers(client):
+    response = client.get("/")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+
+
 def test_api_remove_webp_with_options(client, image_file):
     response = client.post(
         "/api/remove",

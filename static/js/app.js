@@ -187,8 +187,9 @@
     else result.removeAttribute("src");
     $(".btn-download", el).hidden = item.status !== "done";
     $(".btn-retry", el).hidden = item.status !== "error";
+    const duration = item.duration ? ` · ${item.duration.toFixed(1)} s` : "";
     $(".card-size", el).textContent = item.resultBlob
-      ? `${formatBytes(item.file.size)} → ${formatBytes(item.resultBlob.size)}`
+      ? `${formatBytes(item.file.size)} → ${formatBytes(item.resultBlob.size)}${duration}`
       : item.error || formatBytes(item.file.size);
   }
 
@@ -231,6 +232,7 @@
         throw new Error(message);
       }
       const blob = await response.blob();
+      item.duration = Number(response.headers.get("X-Processing-Time")) || null;
       if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
       item.resultBlob = blob;
       item.resultUrl = URL.createObjectURL(blob);
