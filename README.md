@@ -1,39 +1,109 @@
 <div align="center">
 
-<img src="static/favicon.svg" width="72" alt="Quitafondos">
+<img src="static/favicon.svg" width="72" alt="">
 
 # Quitafondos
 
-**Elimina el fondo de decenas de imágenes a la vez, en tu propio servidor.**
+**English** · [Español](README.es.md)
 
-[![CI](https://github.com/David-Raffo/Img-background-remover/actions/workflows/ci.yml/badge.svg)](https://github.com/David-Raffo/Img-background-remover/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask)
+**Self-hosted batch background remover powered by AI.**
+Drop dozens of images at once, fine-tune the result and download them all as a ZIP — everything runs on your own server.
+
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)
+![rembg](https://img.shields.io/badge/rembg-ONNX%20Runtime-6366F1)
+![JavaScript](https://img.shields.io/badge/Vanilla%20JS-no%20build%20step-F7DF1E?logo=javascript&logoColor=black)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+[![CI](https://github.com/David-Raffo/Img-background-remover/actions/workflows/ci.yml/badge.svg)](https://github.com/David-Raffo/Img-background-remover/actions/workflows/ci.yml)
 
-<img src="docs/screenshot-light.png" alt="Captura de Quitafondos" width="880">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/app-dark.png">
+  <img alt="Quitafondos" src="docs/img/app-light.png" width="100%">
+</picture>
 
 </div>
 
-## Características
+---
 
-- **Procesamiento en lote**: arrastra, selecciona o pega (Ctrl+V) hasta 50 imágenes y procésalas en paralelo.
-- **Comparador antes/después** en cada imagen para revisar el recorte.
-- **Varios modelos de IA** ([rembg](https://github.com/danielgatis/rembg)): general, alta precisión, personas, anime y uno ligero.
-- **Salida configurable**: PNG, WebP o JPG, fondo transparente, blanco o de cualquier color.
-- **Recorte automático** al contenido y **bordes finos** (alpha matting) para pelo y contornos difusos.
-- **Redimensionado** opcional para acelerar fotos muy grandes.
-- **Descarga individual o en ZIP**, generado en el navegador sin volver a procesar.
-- **Modo oscuro**, ajustes que se recuerdan y diseño adaptado a móvil.
-- **Privado**: las imágenes se procesan en memoria y nunca se guardan en disco.
-- **API HTTP** sencilla para integrarlo en otros flujos.
+## Overview
 
-<details>
-<summary>Modo oscuro</summary>
-<img src="docs/screenshot-dark.png" alt="Quitafondos en modo oscuro" width="880">
-</details>
+Quitafondos is a web app that removes the background from many images in one go. It runs in a Docker container on your own machine or server and is used from any browser, so photos are never uploaded to a third-party service.
 
-## Inicio rápido con Docker
+Images are processed in memory with [rembg](https://github.com/danielgatis/rembg) and never written to disk. Each image is sent as an independent request, so the interface shows per-image progress, a failed image can be retried on its own and results appear as soon as they are ready.
+
+> The user interface is in Spanish. A Spanish version of this document is available in [README.es.md](README.es.md).
+
+## Features
+
+### Batch processing
+- **Drag and drop, file picker or paste** (<kbd>Ctrl</kbd>+<kbd>V</kbd>) up to 50 images per batch.
+- **Parallel processing** with per-image status (pending, processing, done, error), batch progress bar and one-click retry.
+- **Download one by one or everything as a ZIP**, built in the browser without reprocessing anything.
+
+### Results
+- **Before/after slider** on every result to check the cut-out.
+- **Five AI models**: general purpose, high precision, people, anime/illustrations and a fast lightweight one.
+- **Output format**: PNG, WebP or JPG.
+- **Background**: transparent, white or any solid color.
+- **Auto-crop** to the subject and **fine edges** (alpha matting) for hair and soft contours.
+- **Maximum size** option to speed up very large photos.
+- Automatic **EXIF orientation** fix for phone pictures.
+
+### Interface
+- Light and dark theme following the system, with a manual toggle.
+- Settings are remembered between sessions.
+- Responsive layout for phones and tablets.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        UI[UI<br/>vanilla JS]
+        Q[Request queue<br/>2 in parallel]
+        ZIP[ZIP writer]
+    end
+
+    subgraph Server[Flask + Gunicorn]
+        API[HTTP API]
+        P[Processing<br/>Pillow]
+        S[Model session cache]
+    end
+
+    M[(ONNX models<br/>/models volume)]
+
+    UI --> Q --> API
+    API --> P --> S --> M
+    API -. image .-> UI
+    UI --> ZIP
+```
+
+| Layer | Technology |
+|---|---|
+| Backend | Python, Flask, Gunicorn |
+| Image processing | rembg, ONNX Runtime, Pillow |
+| Frontend | HTML, CSS and vanilla JavaScript — no framework, no build step |
+| Deployment | Docker / Docker Compose |
+| Quality | pytest, ruff, GitHub Actions |
+
+## How it works
+
+**One request per image.** The browser keeps a queue and sends two images at a time to `/api/remove` together with the selected options. This keeps memory usage predictable on the server and lets the UI update each card independently.
+
+**Model sessions are reused.** Loading a model takes seconds, so each one is loaded once per process and cached. Models that are not baked into the image are downloaded on first use and stored in the `/models` volume.
+
+**Post-processing.** After rembg produces the alpha mask, Pillow optionally crops to the bounding box of the subject, composites a solid background and encodes the result in the requested format.
+
+**ZIP in the browser.** Results are already in the browser, so the ZIP is assembled client-side instead of processing the batch again on the server.
+
+**Fast cold start in Docker.** `pymatting`, used by rembg, compiles functions with Numba on import. The image precompiles them during the build and keeps the cache in `NUMBA_CACHE_DIR`, cutting the first request from about 60 s to about 2 s.
+
+## Getting started
+
+### Requirements
+- Docker and Docker Compose
+
+### Run
 
 ```bash
 git clone https://github.com/David-Raffo/Img-background-remover.git
@@ -41,93 +111,78 @@ cd Img-background-remover
 docker compose up -d --build
 ```
 
-Abre [http://localhost:5000](http://localhost:5000).
+Open <http://localhost:5000>.
 
-El modelo `u2net` se descarga durante el build. Para incluir más modelos en la imagen:
+The `u2net` model is downloaded during the build. To bake in more models:
 
 ```bash
 docker compose build --build-arg PRELOAD_MODELS="u2net isnet-general-use"
 ```
 
-Los modelos que no estén precargados se descargan la primera vez que se usan y se guardan en el volumen `models`.
+### Run without Docker
 
-## Ejecución local
-
-Requiere Python 3.11 o superior.
+Requires Python 3.11 or newer.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python app.py
-```
-
-Para producción usa gunicorn, que lee `gunicorn.conf.py`:
-
-```bash
 gunicorn app:app
 ```
 
-## Configuración
+### Configuration
 
-| Variable        | Por defecto | Descripción                                        |
-| --------------- | ----------- | -------------------------------------------------- |
-| `PORT`          | `5000`      | Puerto HTTP                                        |
-| `REMBG_MODEL`   | `u2net`     | Modelo seleccionado por defecto                    |
-| `MAX_UPLOAD_MB` | `200`       | Tamaño máximo de cada petición en MB               |
-| `MAX_FILES`     | `50`        | Número máximo de imágenes por lote                 |
-| `WORKERS`       | `1`         | Procesos de gunicorn (cada uno carga sus modelos)  |
-| `THREADS`       | `4`         | Hilos por proceso                                  |
-| `TIMEOUT`       | `300`       | Tiempo máximo por petición en segundos             |
-| `LOG_LEVEL`     | `INFO`      | Nivel de log                                       |
-| `HOST_PORT`     | `5000`      | Puerto publicado por docker compose                |
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `5000` | HTTP port inside the container. |
+| `HOST_PORT` | `5000` | Port published by Docker Compose. |
+| `REMBG_MODEL` | `u2net` | Model selected by default. |
+| `MAX_UPLOAD_MB` | `200` | Maximum request size in MB. |
+| `MAX_FILES` | `50` | Maximum number of images per batch. |
+| `WORKERS` | `1` | Gunicorn processes (each one loads its own models). |
+| `THREADS` | `4` | Threads per process. |
+| `TIMEOUT` | `300` | Request timeout in seconds. |
+| `LOG_LEVEL` | `INFO` | Log level. |
 
-## Modelos disponibles
+### Models
 
-| Clave               | Uso recomendado                              |
-| ------------------- | -------------------------------------------- |
-| `u2net`             | Uso general, buen equilibrio                 |
-| `isnet-general-use` | Mayor precisión en bordes                    |
-| `u2net_human_seg`   | Retratos y personas                          |
-| `isnet-anime`       | Anime e ilustraciones                        |
-| `silueta`           | Más rápido y ligero, algo menos preciso      |
+| Key | Best for |
+|---|---|
+| `u2net` | General use, good balance |
+| `isnet-general-use` | Higher precision on edges |
+| `u2net_human_seg` | Portraits and people |
+| `isnet-anime` | Anime and illustrations |
+| `silueta` | Fastest and lightest, slightly less accurate |
 
 ## API
 
-### `POST /api/remove`
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/api/remove` | Process one image and return the result |
+| `POST` | `/` | Process several images (`images` field) and return a ZIP, or the image if there is only one |
+| `GET` | `/api/models` | Available models and the default one |
+| `GET` | `/health` | Health check |
 
-Procesa una imagen y devuelve el resultado.
+Options accepted by `/api/remove` and `/`:
 
-| Campo           | Tipo    | Valores                                            |
-| --------------- | ------- | -------------------------------------------------- |
-| `image`         | archivo | JPG, PNG, WebP, BMP o TIFF (obligatorio)           |
-| `model`         | texto   | Una de las claves de modelo                        |
-| `format`        | texto   | `png` (defecto), `webp`, `jpg`                     |
-| `background`    | texto   | `transparent` (defecto) o un color, p. ej. `#fff`  |
-| `crop`          | bool    | `1` para recortar al contenido                     |
-| `alpha_matting` | bool    | `1` para bordes finos                              |
-| `max_size`      | entero  | Lado máximo en px (64-10000)                       |
-
-```bash
-curl -F image=@foto.jpg -F format=webp -F crop=1 http://localhost:5000/api/remove -o foto.webp
-```
-
-Los errores se devuelven como JSON `{"error": "..."}` con códigos `400`, `413`, `415`, `422` o `500`.
-
-### `POST /`
-
-Acepta varios archivos en el campo `images` (y las mismas opciones). Devuelve la imagen si solo hay una o un ZIP con todas, incluyendo `errores.txt` si alguna falló.
+| Field | Values |
+|---|---|
+| `image` | JPG, PNG, WebP, BMP or TIFF file (required) |
+| `model` | One of the model keys |
+| `format` | `png` (default), `webp`, `jpg` |
+| `background` | `transparent` (default) or a color such as `#ffffff` |
+| `crop` | `1` to crop to the subject |
+| `alpha_matting` | `1` for fine edges |
+| `max_size` | Longest side in px (64–10000) |
 
 ```bash
-curl -F images=@a.jpg -F images=@b.png http://localhost:5000/ -o resultado.zip
+curl -F image=@photo.jpg -F format=webp -F crop=1 http://localhost:5000/api/remove -o photo.webp
+curl -F images=@a.jpg -F images=@b.png http://localhost:5000/ -o result.zip
 ```
 
-### Otros
+Errors are returned as JSON `{"error": "..."}` with status `400`, `413`, `415`, `422` or `500`. The batch endpoint adds an `errores.txt` file to the ZIP listing any image that failed. Successful responses include an `X-Processing-Time` header.
 
-- `GET /api/models`: modelos disponibles y el modelo por defecto.
-- `GET /health`: healthcheck.
-
-## Desarrollo
+## Development
 
 ```bash
 pip install -r requirements-dev.txt
@@ -135,17 +190,26 @@ pytest
 ruff check . && ruff format --check .
 ```
 
-Los tests simulan rembg, así que no necesitan descargar modelos.
+The tests mock rembg, so they run in under a second and do not download any model.
 
-## Estructura
+## Project structure
 
 ```
-├── app.py              Rutas Flask y factoría de la aplicación
-├── processing.py       Carga de imágenes, opciones y eliminación del fondo
-├── gunicorn.conf.py    Configuración del servidor de producción
-├── templates/          Plantilla HTML
-├── static/             CSS, JavaScript y favicon
-├── tests/              Tests con pytest
+Img-background-remover/
+├── app.py              # Flask routes and application factory
+├── processing.py       # Image loading, options and background removal
+├── gunicorn.conf.py    # Production server settings
+├── templates/
+│   └── index.html
+├── static/
+│   ├── css/styles.css
+│   ├── js/app.js       # Upload queue, gallery, comparison slider, settings
+│   ├── js/zip.js       # Client-side ZIP writer
+│   └── favicon.svg
+├── tests/              # pytest suite
+├── docs/img/           # Screenshots
 ├── Dockerfile
 └── docker-compose.yml
 ```
+
+<div align="center"><sub>Built by <a href="https://github.com/David-Raffo">David Raffo</a></sub></div>
