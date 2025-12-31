@@ -211,6 +211,10 @@ Img-background-remover/
 └── docker-compose.yml
 ```
 
+## Contribuir
+
+Las contribuciones son bienvenidas. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir un pull request e informa de los problemas de seguridad como se explica en [SECURITY.md](SECURITY.md).
+
 ## Licencia
 
 Publicado bajo la [licencia MIT](LICENSE).
