@@ -213,7 +213,7 @@ Img-background-remover/
 
 ## Contribuir
 
-Las contribuciones son bienvenidas. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir un pull request e informa de los problemas de seguridad como se explica en [SECURITY.md](SECURITY.md).
+Las contribuciones son bienvenidas. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir un pull request e informa de los problemas de seguridad como se explica en [SECURITY.md](SECURITY.md). Las notas de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
