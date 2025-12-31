@@ -15,6 +15,7 @@ Drop dozens of images at once, fine-tune the result and download them all as a Z
 ![JavaScript](https://img.shields.io/badge/Vanilla%20JS-no%20build%20step-F7DF1E?logo=javascript&logoColor=black)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 [![CI](https://github.com/David-Raffo/Img-background-remover/actions/workflows/ci.yml/badge.svg)](https://github.com/David-Raffo/Img-background-remover/actions/workflows/ci.yml)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/app-dark.png">
@@ -211,5 +212,9 @@ Img-background-remover/
 ├── Dockerfile
 └── docker-compose.yml
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).
 
 <div align="center"><sub>Built by <a href="https://github.com/David-Raffo">David Raffo</a></sub></div>
