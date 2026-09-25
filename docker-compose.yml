@@ -1,0 +1,23 @@
+services:
+  quitafondos:
+    build:
+      context: .
+      args:
+        PRELOAD_MODELS: "u2net"
+    image: quitafondos:latest
+    container_name: quitafondos
+    ports:
+      - "${HOST_PORT:-5000}:5000"
+    environment:
+      REMBG_MODEL: u2net
+      MAX_UPLOAD_MB: 200
+      MAX_FILES: 50
+      WORKERS: 1
+      THREADS: 4
+      TIMEOUT: 300
+    volumes:
+      - models:/models
+    restart: unless-stopped
+
+volumes:
+  models:

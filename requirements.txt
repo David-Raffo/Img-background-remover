@@ -1,4 +1,4 @@
-flask
-rembg
-pillow
-onnxruntime
+flask>=3.1,<4
+rembg[cpu]>=2.0.60,<3
+pillow>=11.0,<13
+gunicorn>=23.0,<27
