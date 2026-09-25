@@ -7,7 +7,7 @@
 [English](README.md) · **Español**
 
 **Eliminador de fondos en lote con IA, autoalojado.**
-Sube decenas de imágenes a la vez, ajusta el resultado y descárgalas todas en un ZIP — todo se ejecuta en tu propio servidor.
+Sube decenas de imágenes a la vez, ajusta el resultado y descárgalas todas en un ZIP. Todo se ejecuta en tu propio servidor.
 
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)
@@ -172,7 +172,7 @@ Opciones que aceptan `/api/remove` y `/`:
 | `background` | `transparent` (por defecto) o un color como `#ffffff` |
 | `crop` | `1` para recortar al sujeto |
 | `alpha_matting` | `1` para bordes finos |
-| `max_size` | Lado máximo en px (64–10000) |
+| `max_size` | Lado máximo en px (de 64 a 10000) |
 
 ```bash
 curl -F image=@foto.jpg -F format=webp -F crop=1 http://localhost:5000/api/remove -o foto.webp

@@ -7,7 +7,7 @@
 **English** · [Español](README.es.md)
 
 **Self-hosted batch background remover powered by AI.**
-Drop dozens of images at once, fine-tune the result and download them all as a ZIP — everything runs on your own server.
+Drop dozens of images at once, fine-tune the result and download them all as a ZIP. Everything runs on your own server.
 
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)
@@ -83,7 +83,7 @@ flowchart LR
 |---|---|
 | Backend | Python, Flask, Gunicorn |
 | Image processing | rembg, ONNX Runtime, Pillow |
-| Frontend | HTML, CSS and vanilla JavaScript — no framework, no build step |
+| Frontend | HTML, CSS and vanilla JavaScript, no framework, no build step |
 | Deployment | Docker / Docker Compose |
 | Quality | pytest, ruff, GitHub Actions |
 
@@ -174,7 +174,7 @@ Options accepted by `/api/remove` and `/`:
 | `background` | `transparent` (default) or a color such as `#ffffff` |
 | `crop` | `1` to crop to the subject |
 | `alpha_matting` | `1` for fine edges |
-| `max_size` | Longest side in px (64–10000) |
+| `max_size` | Longest side in px (64 to 10000) |
 
 ```bash
 curl -F image=@photo.jpg -F format=webp -F crop=1 http://localhost:5000/api/remove -o photo.webp
