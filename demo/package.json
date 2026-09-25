@@ -9,6 +9,7 @@
   "devDependencies": {
     "@rmbg/model-silueta": "0.0.1",
     "@rmbg/model-u2netp": "0.0.1",
-    "onnxruntime-web": "1.30.0"
+    "onnxruntime-web": "1.30.0",
+    "wrangler": "^4.140.0"
   }
 }

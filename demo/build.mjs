@@ -8,7 +8,7 @@ const dist = join(here, "dist");
 
 const MAX_FILES = 50;
 const MAX_MB = 200;
-const PAGES_FILE_LIMIT = 25 * 1024 * 1024;
+const ASSET_FILE_LIMIT = 25 * 1024 * 1024;
 
 const models = [
   { key: "u2netp", label: "Rápido", option: "Rápido (U²-Netp · 4,4 MB)", pkg: "@rmbg/model-u2netp" },
@@ -75,7 +75,7 @@ async function copyModels() {
     for (const file of info.files) {
       const source = join(dir, file);
       const { size: bytes } = await stat(source);
-      if (bytes > PAGES_FILE_LIMIT) throw new Error(`${file} is larger than the Cloudflare Pages limit`);
+      if (bytes > ASSET_FILE_LIMIT) throw new Error(`${file} is larger than the Cloudflare asset limit`);
       size += bytes;
       await cp(source, join(dist, "models", file));
     }

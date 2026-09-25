@@ -104,7 +104,7 @@ flowchart LR
 
 ## Browser demo
 
-The [live demo](https://quitafondos.pages.dev) is a static build of the same interface that runs the model in the browser with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), inside a Web Worker so the page never freezes. It is hosted on Cloudflare Pages and has no backend at all, so the photos are never uploaded anywhere.
+The [live demo](https://quitafondos.pages.dev) is a static build of the same interface that runs the model in the browser with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), inside a Web Worker so the page never freezes. It is served as static assets from Cloudflare Workers and has no backend at all, so the photos are never uploaded anywhere.
 
 The worker reproduces what rembg does on the server: the image is scaled to 320×320, normalised with the ImageNet mean and deviation, the predicted mask is rescaled to the original size and used as the alpha channel. Cropping, solid backgrounds, the maximum size and PNG, WebP or JPG output work the same way.
 
@@ -115,7 +115,7 @@ The worker reproduces what rembg does on the server: the image is scaled to 320�
 | Where images are processed | Your server | The visitor's device |
 | TIFF input | Yes | Depends on the browser |
 
-The models are downloaded once and cached by the browser. The build pulls them from npm and checks that each file fits the Cloudflare Pages limit of 25 MB, so no binaries are stored in this repository.
+The models are downloaded once and cached by the browser. The build pulls them from npm and checks that each file fits the Cloudflare limit of 25 MB per asset, so no binaries are stored in this repository.
 
 ```bash
 cd demo
@@ -124,7 +124,7 @@ npm run build      # writes demo/dist
 npm run preview    # serves it on http://localhost:4173
 ```
 
-To publish it, create a Cloudflare Pages project connected to this repository with **root directory** `demo`, **build command** `npm ci && npm run build` and **output directory** `dist`. The `_headers` file enables cross-origin isolation, so ONNX Runtime can use several threads.
+It is published with Workers Builds: a Worker named `quitafondos` connected to this repository, with **root directory** `demo`, **build command** `npm ci && npm run build` and **deploy command** `npx wrangler deploy`. `demo/wrangler.jsonc` points Wrangler at `dist`, and the `_headers` file enables cross-origin isolation so ONNX Runtime can use several threads.
 
 ## Getting started
 
@@ -234,7 +234,7 @@ Img-background-remover/
 │   ├── js/app.js       # Upload queue, gallery, comparison slider, settings
 │   ├── js/zip.js       # Client-side ZIP writer
 │   └── favicon.svg
-├── demo/               # Browser demo for Cloudflare Pages
+├── demo/               # Browser demo for Cloudflare Workers
 │   ├── build.mjs       # Builds demo/dist from templates/ and static/
 │   └── src/            # Web Worker with ONNX Runtime Web, bridge and headers
 ├── tests/              # pytest suite

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Browser demo for Cloudflare Pages that runs U²-Netp and Silueta with ONNX Runtime Web in a Web Worker, with no backend.
+- Browser demo for Cloudflare Workers that runs U²-Netp and Silueta with ONNX Runtime Web in a Web Worker, with no backend.
 
 ## [1.0.0] - 2025-12-31
 

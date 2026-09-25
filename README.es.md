@@ -102,7 +102,7 @@ flowchart LR
 
 ## Demo en el navegador
 
-La [demo en vivo](https://quitafondos.pages.dev) es una versión estática de la misma interfaz que ejecuta el modelo en el navegador con [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), dentro de un Web Worker para que la página nunca se congele. Está alojada en Cloudflare Pages y no tiene ningún backend, así que las fotos no se suben a ningún sitio.
+La [demo en vivo](https://quitafondos.pages.dev) es una versión estática de la misma interfaz que ejecuta el modelo en el navegador con [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), dentro de un Web Worker para que la página nunca se congele. Se sirve como archivos estáticos desde Cloudflare Workers y no tiene ningún backend, así que las fotos no se suben a ningún sitio.
 
 El worker reproduce lo que hace rembg en el servidor: la imagen se escala a 320×320, se normaliza con la media y la desviación de ImageNet, y la máscara resultante se reescala al tamaño original y se usa como canal alfa. El recorte, los fondos de color, el tamaño máximo y la salida en PNG, WebP o JPG funcionan igual.
 
@@ -113,7 +113,7 @@ El worker reproduce lo que hace rembg en el servidor: la imagen se escala a 320�
 | Dónde se procesan las imágenes | Tu servidor | El dispositivo de quien la usa |
 | Entrada TIFF | Sí | Depende del navegador |
 
-Los modelos se descargan una sola vez y el navegador los guarda en caché. El build los trae de npm y comprueba que cada archivo cabe en el límite de 25 MB de Cloudflare Pages, así que en el repositorio no se guarda ningún binario.
+Los modelos se descargan una sola vez y el navegador los guarda en caché. El build los trae de npm y comprueba que cada archivo cabe en el límite de 25 MB por archivo de Cloudflare, así que en el repositorio no se guarda ningún binario.
 
 ```bash
 cd demo
@@ -122,7 +122,7 @@ npm run build      # genera demo/dist
 npm run preview    # lo sirve en http://localhost:4173
 ```
 
-Para publicarla, crea un proyecto de Cloudflare Pages conectado a este repositorio con **directorio raíz** `demo`, **comando de build** `npm ci && npm run build` y **directorio de salida** `dist`. El archivo `_headers` activa el aislamiento entre orígenes para que ONNX Runtime pueda usar varios hilos.
+Se publica con Workers Builds: un Worker llamado `quitafondos` conectado a este repositorio, con **directorio raíz** `demo`, **comando de build** `npm ci && npm run build` y **comando de despliegue** `npx wrangler deploy`. `demo/wrangler.jsonc` indica a Wrangler que suba `dist`, y el archivo `_headers` activa el aislamiento entre orígenes para que ONNX Runtime pueda usar varios hilos.
 
 ## Puesta en marcha
 
@@ -232,7 +232,7 @@ Img-background-remover/
 │   ├── js/app.js       # Cola de subida, galería, comparador y ajustes
 │   ├── js/zip.js       # Generador de ZIP en el navegador
 │   └── favicon.svg
-├── demo/               # Demo en el navegador para Cloudflare Pages
+├── demo/               # Demo en el navegador para Cloudflare Workers
 │   ├── build.mjs       # Genera demo/dist a partir de templates/ y static/
 │   └── src/            # Web Worker con ONNX Runtime Web, puente y cabeceras
 ├── tests/              # Tests con pytest
