@@ -213,26 +213,40 @@
     render();
   }
 
+  const engine = window.QuitafondosEngine || null;
+
+  async function removeOnServer(file, settings) {
+    const body = new FormData();
+    body.append("image", file);
+    Object.entries(settings).forEach(([key, value]) => body.append(key, value));
+
+    let response;
+    try {
+      response = await fetch("api/remove", { method: "POST", body });
+    } catch {
+      throw new Error("No se pudo conectar con el servidor.");
+    }
+    if (!response.ok) {
+      let message = `Error ${response.status}`;
+      try {
+        message = (await response.json()).error || message;
+      } catch {}
+      throw new Error(message);
+    }
+    return {
+      blob: await response.blob(),
+      duration: Number(response.headers.get("X-Processing-Time")) || null,
+    };
+  }
+
   async function processItem(item, settings) {
     item.status = "processing";
     item.error = null;
     updateCard(item);
 
-    const body = new FormData();
-    body.append("image", item.file);
-    Object.entries(settings).forEach(([key, value]) => body.append(key, value));
-
     try {
-      const response = await fetch("api/remove", { method: "POST", body });
-      if (!response.ok) {
-        let message = `Error ${response.status}`;
-        try {
-          message = (await response.json()).error || message;
-        } catch {}
-        throw new Error(message);
-      }
-      const blob = await response.blob();
-      item.duration = Number(response.headers.get("X-Processing-Time")) || null;
+      const { blob, duration } = await (engine ? engine.remove(item.file, settings) : removeOnServer(item.file, settings));
+      item.duration = duration;
       if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
       item.resultBlob = blob;
       item.resultUrl = URL.createObjectURL(blob);
@@ -240,7 +254,7 @@
       item.status = "done";
     } catch (error) {
       item.status = "error";
-      item.error = error instanceof TypeError ? "No se pudo conectar con el servidor." : error.message;
+      item.error = error.message;
     }
 
     if (items.includes(item)) updateCard(item);
