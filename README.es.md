@@ -9,7 +9,7 @@
 **Eliminador de fondos en lote con IA, autoalojado.**
 Sube decenas de imágenes a la vez, ajusta el resultado y descárgalas todas en un ZIP. Todo se ejecuta en tu propio servidor.
 
-### [▶ Demo en vivo](https://quitafondos.pages.dev)
+### [▶ Demo en vivo](https://quitafondos.raffo.dev)
 <sub>La demo funciona entera en tu navegador, las imágenes nunca salen de tu dispositivo.</sub>
 
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
@@ -102,7 +102,7 @@ flowchart LR
 
 ## Demo en el navegador
 
-La [demo en vivo](https://quitafondos.pages.dev) es una versión estática de la misma interfaz que ejecuta el modelo en el navegador con [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), dentro de un Web Worker para que la página nunca se congele. Se sirve como archivos estáticos desde Cloudflare Workers y no tiene ningún backend, así que las fotos no se suben a ningún sitio.
+La [demo en vivo](https://quitafondos.raffo.dev) es una versión estática de la misma interfaz que ejecuta el modelo en el navegador con [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), dentro de un Web Worker para que la página nunca se congele. Se sirve como archivos estáticos desde Cloudflare Workers y no tiene ningún backend, así que las fotos no se suben a ningún sitio.
 
 El worker reproduce lo que hace rembg en el servidor: la imagen se escala a 320×320, se normaliza con la media y la desviación de ImageNet, y la máscara resultante se reescala al tamaño original y se usa como canal alfa. El recorte, los fondos de color, el tamaño máximo y la salida en PNG, WebP o JPG funcionan igual.
 
