@@ -9,6 +9,9 @@
 **Self-hosted batch background remover powered by AI.**
 Drop dozens of images at once, fine-tune the result and download them all as a ZIP. Everything runs on your own server.
 
+### [▶ Live demo](https://quitafondos.pages.dev)
+<sub>The demo runs entirely in your browser, the images never leave your device.</sub>
+
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)
 ![rembg](https://img.shields.io/badge/rembg-ONNX%20Runtime-6366F1)
@@ -98,6 +101,30 @@ flowchart LR
 **ZIP in the browser.** Results are already in the browser, so the ZIP is assembled client-side instead of processing the batch again on the server.
 
 **Fast cold start in Docker.** `pymatting`, used by rembg, compiles functions with Numba on import. The image precompiles them during the build and keeps the cache in `NUMBA_CACHE_DIR`, cutting the first request from about 60 s to about 2 s.
+
+## Browser demo
+
+The [live demo](https://quitafondos.pages.dev) is a static build of the same interface that runs the model in the browser with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), inside a Web Worker so the page never freezes. It is hosted on Cloudflare Pages and has no backend at all, so the photos are never uploaded anywhere.
+
+The worker reproduces what rembg does on the server: the image is scaled to 320×320, normalised with the ImageNet mean and deviation, the predicted mask is rescaled to the original size and used as the alpha channel. Cropping, solid backgrounds, the maximum size and PNG, WebP or JPG output work the same way.
+
+| | Self-hosted | Browser demo |
+|---|---|---|
+| Models | Five, up to 170 MB | Fast (U²-Netp, 4.4 MB) and General (Silueta, 42 MB) |
+| Fine edges (alpha matting) | Yes | No |
+| Where images are processed | Your server | The visitor's device |
+| TIFF input | Yes | Depends on the browser |
+
+The models are downloaded once and cached by the browser. The build pulls them from npm and checks that each file fits the Cloudflare Pages limit of 25 MB, so no binaries are stored in this repository.
+
+```bash
+cd demo
+npm ci
+npm run build      # writes demo/dist
+npm run preview    # serves it on http://localhost:4173
+```
+
+To publish it, create a Cloudflare Pages project connected to this repository with **root directory** `demo`, **build command** `npm ci && npm run build` and **output directory** `dist`. The `_headers` file enables cross-origin isolation, so ONNX Runtime can use several threads.
 
 ## Getting started
 
@@ -207,6 +234,9 @@ Img-background-remover/
 │   ├── js/app.js       # Upload queue, gallery, comparison slider, settings
 │   ├── js/zip.js       # Client-side ZIP writer
 │   └── favicon.svg
+├── demo/               # Browser demo for Cloudflare Pages
+│   ├── build.mjs       # Builds demo/dist from templates/ and static/
+│   └── src/            # Web Worker with ONNX Runtime Web, bridge and headers
 ├── tests/              # pytest suite
 ├── docs/img/           # Screenshots
 ├── Dockerfile

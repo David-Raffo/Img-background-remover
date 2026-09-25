@@ -9,6 +9,9 @@
 **Eliminador de fondos en lote con IA, autoalojado.**
 Sube decenas de imágenes a la vez, ajusta el resultado y descárgalas todas en un ZIP. Todo se ejecuta en tu propio servidor.
 
+### [▶ Demo en vivo](https://quitafondos.pages.dev)
+<sub>La demo funciona entera en tu navegador, las imágenes nunca salen de tu dispositivo.</sub>
+
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)
 ![rembg](https://img.shields.io/badge/rembg-ONNX%20Runtime-6366F1)
@@ -96,6 +99,30 @@ flowchart LR
 **ZIP en el navegador.** Los resultados ya están en el navegador, así que el ZIP se genera en el cliente en lugar de volver a procesar el lote en el servidor.
 
 **Arranque rápido en Docker.** `pymatting`, que usa rembg, compila funciones con Numba al importarse. La imagen las precompila durante el build y guarda la caché en `NUMBA_CACHE_DIR`, lo que reduce la primera petición de unos 60 s a unos 2 s.
+
+## Demo en el navegador
+
+La [demo en vivo](https://quitafondos.pages.dev) es una versión estática de la misma interfaz que ejecuta el modelo en el navegador con [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), dentro de un Web Worker para que la página nunca se congele. Está alojada en Cloudflare Pages y no tiene ningún backend, así que las fotos no se suben a ningún sitio.
+
+El worker reproduce lo que hace rembg en el servidor: la imagen se escala a 320×320, se normaliza con la media y la desviación de ImageNet, y la máscara resultante se reescala al tamaño original y se usa como canal alfa. El recorte, los fondos de color, el tamaño máximo y la salida en PNG, WebP o JPG funcionan igual.
+
+| | Autoalojado | Demo en el navegador |
+|---|---|---|
+| Modelos | Cinco, de hasta 170 MB | Rápido (U²-Netp, 4,4 MB) y General (Silueta, 42 MB) |
+| Bordes finos (alpha matting) | Sí | No |
+| Dónde se procesan las imágenes | Tu servidor | El dispositivo de quien la usa |
+| Entrada TIFF | Sí | Depende del navegador |
+
+Los modelos se descargan una sola vez y el navegador los guarda en caché. El build los trae de npm y comprueba que cada archivo cabe en el límite de 25 MB de Cloudflare Pages, así que en el repositorio no se guarda ningún binario.
+
+```bash
+cd demo
+npm ci
+npm run build      # genera demo/dist
+npm run preview    # lo sirve en http://localhost:4173
+```
+
+Para publicarla, crea un proyecto de Cloudflare Pages conectado a este repositorio con **directorio raíz** `demo`, **comando de build** `npm ci && npm run build` y **directorio de salida** `dist`. El archivo `_headers` activa el aislamiento entre orígenes para que ONNX Runtime pueda usar varios hilos.
 
 ## Puesta en marcha
 
@@ -205,6 +232,9 @@ Img-background-remover/
 │   ├── js/app.js       # Cola de subida, galería, comparador y ajustes
 │   ├── js/zip.js       # Generador de ZIP en el navegador
 │   └── favicon.svg
+├── demo/               # Demo en el navegador para Cloudflare Pages
+│   ├── build.mjs       # Genera demo/dist a partir de templates/ y static/
+│   └── src/            # Web Worker con ONNX Runtime Web, puente y cabeceras
 ├── tests/              # Tests con pytest
 ├── docs/img/           # Capturas
 ├── Dockerfile

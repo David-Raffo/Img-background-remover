@@ -1,0 +1,14 @@
+{
+  "name": "quitafondos-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && npx --yes serve dist -l 4173"
+  },
+  "devDependencies": {
+    "@rmbg/model-silueta": "0.0.1",
+    "@rmbg/model-u2netp": "0.0.1",
+    "onnxruntime-web": "1.30.0"
+  }
+}

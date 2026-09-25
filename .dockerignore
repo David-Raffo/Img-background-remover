@@ -12,3 +12,4 @@ venv
 tests
 *.md
 docker-compose.yml
+demo/
